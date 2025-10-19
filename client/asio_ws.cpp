@@ -13,13 +13,10 @@
 #include "constants.hpp"
 #include "../core/utils.hpp"
 
-//  Define Websocket client type
-typedef websocketpp::client<websocketpp::config::asio_client> client;
-
 //  Internal variables
 static websocketpp::connection_hdl hdl;
 static websocketpp::lib::error_code ec;
-static client wsclient;
+static websocketpp::client<websocketpp::config::asio_client> wsclient;
 static std::atomic<bool> quitting{false};
 
 //  ---------------------------------------------------------------------------------------------------------------------

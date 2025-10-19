@@ -41,11 +41,13 @@ int main(int argc, char* argv[]) {
         return 1;
     
     //	Are we root?
-    if (geteuid() != 0)
+    if (geteuid() != 0) {
       log("WARNING", "This program should be run as root! Some features will not work without root privileges.");
+      shutdown_enabled = false;
+    }
 
     //  Initialize Websocket service
-    else if (!init_websocket(process_commands))
+    if (!init_websocket(process_commands))
       return 1;
 
     return 0;

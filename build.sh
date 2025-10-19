@@ -40,6 +40,11 @@ case "$PLATFORM" in
         PLATFORM_NAME="x86 (32-bit)"
         APP_NAME="${APP_NAME}x86"
         ;;
+    freebsd)
+        COMPILER="g++"
+        PLATFORM_NAME="x64"
+        APP_NAME="${APP_NAME}freebsd_x64"
+        ;;        
     mips)
         COMPILER="../compilers/mipsel-linux-muslsf-cross/bin/mipsel-linux-muslsf-g++"
         PLATFORM_NAME="MIPS (32-bit)"

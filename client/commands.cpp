@@ -12,6 +12,10 @@
 #include <unistd.h>
 #include <ctime>
 
+#if defined(__FreeBSD__)
+	#include <sys/reboot.h>
+#endif
+
 #include "../core/utils.hpp"
 
 #include "./asio_ws.hpp"
@@ -37,6 +41,10 @@ bool process_args(int argc, char* argv[]) {
       	//  Logging on/off
       	if (std::strcmp(argv[i], "--log") == 0 || std::strcmp(argv[i], "-l") == 0)
           	  logging_enabled = true;
+
+      	//  No shutdown
+      	if (std::strcmp(argv[i], "--disable_shutdown") == 0 || std::strcmp(argv[i], "-ns") == 0)
+          	  shutdown_enabled = false;
 
       	//  Verbose logging on/off
       	if (std::strcmp(argv[i], "--verbose") == 0) {
@@ -222,15 +230,32 @@ void process_commands (std::string payload) {
   //  ----------------------------------------------------------------------------------------------------------------
   
   if (command == "SHUTDOWN") {
-  if (geteuid() != 0) {
-    send(reply_to + "::" + ws_id + "::0::error::1::Shutdown failed: Client is not running as root");
-    log("ERROR", "Shutdown request cannot be executed - root privileges are required!");
-    return;
-  }
 
-    send(reply_to + "::" + ws_id + "::0::::Shutdown received");
-	log("LOG", "Shutdown!");
-	system("poweroff");
+	if (geteuid() != 0) {
+		send(reply_to + "::" + ws_id + "::0::error::1::Shutdown failed: Client is not running as root");
+		log("ERROR", "Shutdown request cannot be executed - root privileges are required!");
+		return;
+	}
+
+	if (shutdown_enabled) {
+		send(reply_to + "::" + ws_id + "::0::::Shutdown");
+		log("LOG", "Shutdown!");
+		close_websocket();
+
+		#if defined(__FreeBSD__)
+			sync();
+			reboot(RB_POWEROFF);
+		#else
+			system("poweroff");
+		#endif
+
+	} else {
+		send(reply_to + "::" + ws_id + "::0::::Shutdown disabled, shutting down client only");
+		log("LOG", "Shutdown disabled, exiting client!");
+		close_websocket();
+		std::exit(0);
+	}
+
 	return;
   }
 }

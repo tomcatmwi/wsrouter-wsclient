@@ -30,5 +30,8 @@ extern int retries;
 extern int retry_interval;
 extern int ws_handshake_timeout;
 
+//  Shutdown enabled
+extern bool shutdown_enabled;
+
 //  Help text
 extern std::string help_text;

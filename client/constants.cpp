@@ -2,7 +2,7 @@
 #include <string>
 
 //  Version number and build time
-const std::string version = std::string("1.3.0 ") + __DATE__ + " " + __TIME__;
+const std::string version = std::string("1.4.1 ") + __DATE__ + " " + __TIME__;
 
 //  Server host
 std::string ws_host = "192.168.8.1";
@@ -24,20 +24,24 @@ std::string pipe_out = "/tmp/ws_out";
 //  PID filename
 std::string pid_file = "/tmp/wsclient.pid";
 
-//      Websocket connection retries - 0 means infinite
+//  Websocket connection retries - 0 means infinite
 int retries = 10;
 
-//      Connection retry interval, milliseconds
+//  Connection retry interval, milliseconds
 int retry_interval = 1000;
 
-//      Timeout for a Websocket connection attempt, milliseconds
+//  Timeout for a Websocket connection attempt, milliseconds
 int ws_handshake_timeout = 2000;
+
+//  Shutdown enabled
+bool shutdown_enabled = true;
 
 //  Help text
 std::string help_text =
     "wsclient - The Ultralight IoT Websocket Client\n"
     "Version and build date: " + version + "\n\n"
     "Command line arguments:\n\n"
+    "  --disable_shutdown, -ds              Disable remote shutdown. The client will still disconnect upon receiving the command." + "\n"
     "  --help, -h                           This text\n"
     "  --host, -x <host>                    Websocket remote host (server). Default: " + ws_host + "\n"
     "  --id, -i <id>                        Websocket client ID. The router will know this client by this name. Default: " + ws_id + "\n"
