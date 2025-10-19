@@ -42,7 +42,7 @@ case "$PLATFORM" in
         ;;
     freebsd)
         COMPILER="g++"
-        PLATFORM_NAME="x64"
+        PLATFORM_NAME="FreeBSD x64"
         APP_NAME="${APP_NAME}freebsd_x64"
         ;;        
     mips)
@@ -51,7 +51,7 @@ case "$PLATFORM" in
         APP_NAME="${APP_NAME}mips"
         ;;
     *)
-        echo "Invalid platform! Options: x86, x64, arm, arm64, mips"
+        echo "Invalid platform! Options: x86, x64, freebsd, arm, arm64, mips"
         exit 1
         ;;
 esac
