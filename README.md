@@ -205,9 +205,11 @@ Possible error messages:
 
 A build script is provided for your convenience:
 ```
-bash build.sh <x86|x64|arm|arm64|mips> <client|router>
+bash build.sh <x86|x64|freebsd_x64|arm|arm64|mips> <client|router>
 ```
 Requires the header-only libraries ASIO and WebSocket++, and links against the standard C++17 libraries (`pthread`, `libstdc++`, `libm`, `glibc`). No Boost or external dependencies are needed.
+
+*Important:* The project uses `asio`, imported as a Git submodule. Currently this dependency is pinned at version 1.18.0. Do not upgrade because `websocketpp` (v0.8.2) is not currently fully compatible with the latest version (v1.36.0) due to API changes. This repo will be updated when `websocketpp` is fixed.
 
 # Some remarks
 

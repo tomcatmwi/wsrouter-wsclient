@@ -6,9 +6,6 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 
-asio::io_service& get_io_service();
-extern asio::io_context io;
-
 bool init_websocket(std::function<void(websocketpp::connection_hdl, std::string)> on_message);
 void close_websocket();
 void send_message(websocketpp::connection_hdl hdl, const std::string& data);

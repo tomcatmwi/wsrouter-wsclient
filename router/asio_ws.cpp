@@ -6,9 +6,9 @@
 #include <functional>
 
 #define ASIO_STANDALONE
-#include <asio/steady_timer.hpp>
-#include <websocketpp/config/asio_no_tls.hpp>
-#include <websocketpp/server.hpp>
+#include <asio.hpp>
+#include <websocketpp/config/asio_no_tls_client.hpp>
+#include <websocketpp/client.hpp>
 
 #include "constants.hpp"
 #include "commands.hpp"
@@ -19,7 +19,7 @@
 websocketpp::connection_hdl hdl;
 websocketpp::server<websocketpp::config::asio> wsrouter;
 static websocketpp::lib::error_code ec;
-asio::io_context io;
+asio::io_service io;
 
 //  Flag to indicate that the program is quitting
 static std::atomic<bool> quitting{false};
@@ -29,7 +29,7 @@ std::unordered_map<std::string, Client> clients{};
 
 //  ---------------------------------------------------------------------------------------------------------------------
 
-asio::io_service& get_io_service() {
+asio::io_context& get_io_service() {
     return wsrouter.get_io_service();
 }
 

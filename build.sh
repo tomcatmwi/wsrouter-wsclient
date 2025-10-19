@@ -56,7 +56,7 @@ case "$PLATFORM" in
         ;;
 esac
 
-echo Compiling for $PLATFORM_NAME...
+echo Compiling $SOURCE for $PLATFORM_NAME...
 
 $COMPILER \
     -std=c++17 \
@@ -66,7 +66,7 @@ $COMPILER \
     -pthread \
     -Wno-template-id-cdtor \
     -static \
-    -Icore/asio/include \
+    -Icore/asio/asio/include \
     -Icore/websocketpp \
     $FLAGS \
     "ws$SOURCE.cpp" \

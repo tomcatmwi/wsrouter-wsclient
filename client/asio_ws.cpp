@@ -6,9 +6,11 @@
 #include <functional>
 
 #define ASIO_STANDALONE
-#include <asio/steady_timer.hpp>
+#include <asio.hpp>
 #include <websocketpp/config/asio_no_tls_client.hpp>
 #include <websocketpp/client.hpp>
+
+typedef websocketpp::client<websocketpp::config::asio_client> client;
 
 #include "constants.hpp"
 #include "../core/utils.hpp"
@@ -16,12 +18,12 @@
 //  Internal variables
 static websocketpp::connection_hdl hdl;
 static websocketpp::lib::error_code ec;
-static websocketpp::client<websocketpp::config::asio_client> wsclient;
+static client wsclient;
 static std::atomic<bool> quitting{false};
 
 //  ---------------------------------------------------------------------------------------------------------------------
 
-asio::io_service& get_io_service() {
+asio::io_context& get_io_service() {
     return wsclient.get_io_service();
 }
 
@@ -83,34 +85,43 @@ bool init_websocket(std::function<void(std::string)> on_message) {
         
     //	Automatic reconnection routine
 	schedule_reconnect = [&](){
-	  if (quitting)
-		return;
-		
-  	  if (retries != 0 && retry_counter >= retries) {
-          log("ERROR", "Connection retry limit (" + std::to_string(retries) + ") reached. Giving up!");
-          close_websocket();
-	      return;
-      }
-      
-      ++retry_counter;
-    
-      wsclient.set_timer(retry_interval, [&](websocketpp::lib::error_code const& tec) {
-        	
-        if (tec || quitting) return; // timer canceled
-        websocketpp::lib::error_code err;
-    
-        auto con = wsclient.get_connection(ws_fullhost, err);
-        if (err) {
-            log("ERROR", "Reconnect get_connection failed: " + err.message());
-            schedule_reconnect();
+        if (quitting)
+        return;
+
+        if (retries != 0 && retry_counter >= retries) {
+            log("ERROR", "Connection retry limit (" + std::to_string(retries) + ") reached. Giving up!");
+            close_websocket();
             return;
         }
-      	
-      	log("LOG", "Attempting to reconnect (" + std::to_string(retry_counter) + (retries ? "/" + std::to_string(retries) : "") + ")...");
 
-      	con->set_open_handshake_timeout(ws_handshake_timeout);
-    	wsclient.connect(con);
-  	  });
+        ++retry_counter;
+
+        //  Deprecated: legacy code for old Websocket++ version using set_timer
+        wsclient.set_timer(retry_interval, [&](websocketpp::lib::error_code const& tec) {
+
+        // For later upgrade after wsocketpp is fixed: Use ASIO steady_timer
+        
+        // auto timer = std::make_shared<asio::steady_timer>(wsclient.get_io_service());
+        // timer->expires_after(std::chrono::milliseconds(retry_interval));
+        // timer->async_wait([timer, &schedule_reconnect](const std::error_code& tec) {
+
+            if (tec || quitting) return;
+            
+            websocketpp::lib::error_code err;
+            auto con = wsclient.get_connection(ws_fullhost, err);
+
+            if (err) {
+                log("ERROR", "Reconnect get_connection failed: " + err.message());
+                schedule_reconnect();
+                return;
+            }
+            
+            log("LOG", "Attempting to reconnect (" + std::to_string(retry_counter) + (retries ? "/" + std::to_string(retries) : "") + ")...");
+
+            con->set_open_handshake_timeout(ws_handshake_timeout);
+            wsclient.connect(con);
+        });
+
 	};
     
     //	Connection closure handler
