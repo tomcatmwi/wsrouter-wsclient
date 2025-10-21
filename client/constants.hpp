@@ -22,7 +22,7 @@ extern bool logging_verbose;
 extern std::string pid_file;
 
 //  FIFO pipes
-extern std::string pipe_in;		//  Incoming pipe; the "pipe" command writes to this
+extern std::string pipe_in;		//  Incoming pipe; all incoming messages will go there and the "pipe" command also writes to this
 extern std::string pipe_out;	//  Other programs may write this pipe to send out something
 
 //	Websocket connection retry constants
@@ -32,6 +32,9 @@ extern int ws_handshake_timeout;
 
 //  Shutdown enabled
 extern bool shutdown_enabled;
+
+//  Pipe all messages to the FIFO pipe
+extern bool pipe_all;
 
 //  Help text
 extern std::string help_text;

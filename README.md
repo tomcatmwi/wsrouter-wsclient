@@ -35,21 +35,31 @@ The router need not be run as root.
 Simply run `wsclient` on any device, and it will attempt to connect to the router. It will keep retrying until it succeeds or hits the retry limit.
 It is recommended, but not mandatory, to run `wsclient` as a root process.
 
-**Command line parameters:**
+#### Command line parameters:
 
+#### Connection
 |Parameter|Arguments|Meaning|
 |---|---|---|
 |`--host`, `-h`|Host name|Hostname (IP) and port of the router. Default: `ws://192.168.8.1:8080`|
 |`--id`, `-i`|Client ID|Name of this client. Default: `noname`|
-|`--pid`, `-p`|Path to PID file|Store the process ID in a file. Default: `/tmp/ws.pid`|
-|`--pipe-in`, `-pi`|Pipe path|Input FIFO pipe. Default: `/tmp/ws_in`|
-|`--pipe-out`, `-po`|Pipe path|Output FIFO pipe. Default: `/tmp/ws_out`|
 |`--retries`, `-r`|Number of retries|Attempts to reconnect if Websocket connection is dropped. 0 means infinite. Default: `10`|
 |`--retry_interval`, `-ri`|Milliseconds|Milliseconds to wait between reconnection attempts. Default: `1000`|
 |`--timeout`, `-t`|Milliseconds|Timeout limit for reconnection attempts. Default: `2000`|
-|`--log`, `-l`|Log all incoming and outgoing messages to the console.|
-|`--version`, `-v`|Show version|
-|`--help`, `-h`|Get help|
+
+#### FIFO pipes
+|Parameter|Arguments|Meaning|
+|---|---|---|
+|`--disable_pipe_all`, `-dp`||Disable forwarding every incoming message to the output FIFO pipe, except the PIPE command|
+|`--pipe-in`, `-pi`|Pipe path|Input FIFO pipe. Default: `/tmp/ws_in`|
+|`--pipe-out`, `-po`|Pipe path|Output FIFO pipe. Default: `/tmp/ws_out`|
+
+### Others
+|Parameter|Arguments|Meaning|
+|---|---|---|
+|`--help`, `-h`||Get help|
+|`--log`, `-l`||Log all incoming and outgoing messages to the console.|
+|`--pid`, `-p`|Path to PID file|Store the process ID in a file. Default: `/tmp/ws.pid`|
+|`--version`, `-v`||Show version|
 
 ###  FIFO pipes
 
@@ -102,11 +112,6 @@ Tests whether the client is responding.
 
 **Example**: `recipient::sender::1::::ping`
 **Response:** `sender::recipient::0::::PONG`
-
-#### `pipe`
-Writes the specified string to the input FIFO pipe. This is how you can communicate with your own program, running on the same machine. The client sends no response.
-
-**Example:** `recipient::sender::0::::pipe::Hello there!`
 
 #### `date` or `time`
 Sets system date, time (optional) and timezone (optional) on the recipient device. Requires root privileges!

@@ -44,7 +44,9 @@ int main(int argc, char* argv[]) {
     if (geteuid() != 0) {
       log("WARNING", "This program should be run as root! Some features will not work without root privileges.");
       shutdown_enabled = false;
-    }
+    } 
+
+    log("INFO", std::string("Remote shutdown is ") + (shutdown_enabled ? "enabled" : "disabled"));
 
     //  Initialize Websocket service
     if (!init_websocket(process_commands))

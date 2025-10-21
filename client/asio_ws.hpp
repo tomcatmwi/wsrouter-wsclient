@@ -11,4 +11,5 @@
 asio::io_context& get_io_service();
 bool init_websocket(std::function<void(std::string)> on_message);
 void send(const std::string& data);
+void shutdown();
 void close_websocket();

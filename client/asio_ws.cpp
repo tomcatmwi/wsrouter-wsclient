@@ -45,6 +45,11 @@ void close_websocket() {
 	  log("LOG", "Websocket client terminated.");
 }
 
+//  Shutdown routine for the SHUTDOWN command
+void shutdown(std::string reply_to) {
+
+}
+
 //  Send Websocket message (thread safe) --------------------------------------------------------------------------------
 
 void send(const std::string& data) {
@@ -61,7 +66,7 @@ void send(const std::string& data) {
 
 std::string ws_fullhost;
 bool init_websocket(std::function<void(std::string)> on_message) {
-
+        
 	static int retry_counter = 0;
 	std::function<void()> schedule_reconnect;
 

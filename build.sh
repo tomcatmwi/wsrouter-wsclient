@@ -62,7 +62,7 @@ $COMPILER \
     -std=c++17 \
     -Wall \
     -fmax-errors=1 \
-    -o "$APP_NAME" \
+    -o ./bin/"$APP_NAME" \
     -pthread \
     -Wno-template-id-cdtor \
     -static \

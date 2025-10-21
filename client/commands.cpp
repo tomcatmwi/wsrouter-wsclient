@@ -43,7 +43,7 @@ bool process_args(int argc, char* argv[]) {
           	  logging_enabled = true;
 
       	//  No shutdown
-      	if (std::strcmp(argv[i], "--disable_shutdown") == 0 || std::strcmp(argv[i], "-ns") == 0)
+      	if (geteuid() != 0 || std::strcmp(argv[i], "--disable_shutdown") == 0 || std::strcmp(argv[i], "-ds") == 0)
           	  shutdown_enabled = false;
 
       	//  Verbose logging on/off
@@ -59,6 +59,10 @@ bool process_args(int argc, char* argv[]) {
       	//  FIFO outgoing pipe path
       	if (i > 0 && (std::strcmp(argv[i-1], "--pipe_out") == 0 || std::strcmp(argv[i-1], "-po") == 0) && argv[i] && *argv[i])
               	pipe_out = argv[i];
+
+      	//  Disable forwarding of messages to FIFO pipe
+      	if (std::strcmp(argv[i], "--disable_pipe_all") == 0 || std::strcmp(argv[i], "-dp") == 0)
+          	  pipe_all = false;
 
       	//  Websocket client ID
       	if (i > 0 && (std::strcmp(argv[i-1], "--id") == 0 || std::strcmp(argv[i-1], "-i") == 0) && argv[i] && *argv[i])
@@ -121,71 +125,77 @@ bool process_args(int argc, char* argv[]) {
 
 //	Commands processor -----------------------------------------------------------------------------------------------------------------
 void process_commands (std::string payload) {
-  //  Command format:
-  //  sender::expects_reply::reply_to::content
+	//  Command format:
+	//  sender::expects_reply::reply_to::content
 
-  std::vector<std::string> parts = split(payload, "::");
+	std::vector<std::string> parts = split(payload, "::");
 
-  //  Get message parts
-  std::string sender_id = parts[0];
+	//  Get message parts
+	std::string sender_id = parts[0];
 
-  if (parts.size() < 3) {
-	send(sender_id + "::" + ws_id + "::0::ERROR::Message is incomplete");
-	return;
-  }
+	if (parts.size() < 3) {
+		send(sender_id + "::" + ws_id + "::0::ERROR::Message is incomplete");
+		return;
+	}
 
-  // bool expects_reply = parts[1] == "1";
-  bool error = parts[1] == "2";
-  std::string reply_to = (parts.size() > 2 && !parts[2].empty()) ? parts[2] : parts[0];
-  
-  std::string content = join(parts, "::", 3);
-  std::string timestamp = get_timestamp();
+	// bool expects_reply = parts[1] == "1";
+	bool error = parts[1] == "2";
+	std::string reply_to = (parts.size() > 2 && !parts[2].empty()) ? parts[2] : parts[0];
 	
-  //  Error
-  if (error) {
-	log("ERROR", content);
-	return;
-  }
+	std::string content = join(parts, "::", 3);
+	std::string timestamp = get_timestamp();
+		
+	//  Error
+	if (error) {
+		if (pipe_all)
+			write_pipe(payload);
+		log("ERROR", content);
+		return;
+	}
 
-  std::vector<std::string> content_parts = split(content, "::");
-  std::string command = to_upper(content_parts[0]);
+	std::vector<std::string> content_parts = split(content, "::");
+	std::string command = to_upper(content_parts[0]);
 
-  if (logging_enabled)
-	log("LOG", content);
+	if (logging_enabled)
+		log("LOG", content);
 
-  //  ----------------------------------------------------------------------------------------------------------------
-  //  PING - Sends back a ping
-  //  ----------------------------------------------------------------------------------------------------------------
+	//	Output incoming command unless not
+	if (pipe_all && command != "PIPE")
+		write_pipe(payload);
 
-    if (command == "PING") {
-    send(reply_to + "::" + ws_id + "::0::::PONG");
-      return;
-    }
+	//  ----------------------------------------------------------------------------------------------------------------
+	//  PING - Sends back a ping
+	//  ----------------------------------------------------------------------------------------------------------------
 
-  //  ----------------------------------------------------------------------------------------------------------------
-  //  PIPE - Write incoming content to input FIFO pipeline
-  //  Example: PIPE::content
-  //  ----------------------------------------------------------------------------------------------------------------
+		if (command == "PING") {
+		send(reply_to + "::" + ws_id + "::0::::PONG");
+		return;
+		}
 
-  if (command == "PIPE") {
-	//	Remove "pipe::" from the content
-	write_pipe(content.substr(6));
-	send(reply_to + "::" + ws_id + "::0::::Message sent to " + pipe_in);  
-	return;
-  }
+	//  ----------------------------------------------------------------------------------------------------------------
+	//  PIPE - Write incoming content to input FIFO pipeline
+	//  Example: PIPE::content
+	//  ----------------------------------------------------------------------------------------------------------------
 
-  //  ----------------------------------------------------------------------------------------------------------------
-  //  DATE - Set system date and time (latter is optional)
-  //  Example: DATE::year::month::day::hour::minute::second::timezone
-  //  ----------------------------------------------------------------------------------------------------------------
+	if (command == "PIPE") {
+		//	Remove "pipe::" from the content
+		write_pipe(content.substr(6));
+		send(reply_to + "::" + ws_id + "::0::::Message sent to " + pipe_in);  
+		return;
+	}
+
+	//  ----------------------------------------------------------------------------------------------------------------
+	//  DATE - Set system date and time (latter is optional)
+	//  Example: DATE::year::month::day::hour::minute::second::timezone
+	//  ----------------------------------------------------------------------------------------------------------------
 
     if (command == "DATE" || command == "TIME") {
 
-	if (geteuid() != 0) {
-	  send(reply_to + "::" + ws_id + "::0::error::1::Failed to set date/time: Client is not running as root");
-	  log("ERROR", "Date and time cannot be set - root privileges are required!");
-	  return;
-	}			
+		if (geteuid() != 0) {
+		send(reply_to + "::" + ws_id + "::0::error::1::Failed to set date/time: Client is not running as root");
+		log("ERROR", "Date and time cannot be set - root privileges are required!");
+		return;
+		}			
 
       auto date_parts = split(content_parts[1], "::");
 
@@ -231,31 +241,27 @@ void process_commands (std::string payload) {
   
   if (command == "SHUTDOWN") {
 
-	if (geteuid() != 0) {
-		send(reply_to + "::" + ws_id + "::0::error::1::Shutdown failed: Client is not running as root");
-		log("ERROR", "Shutdown request cannot be executed - root privileges are required!");
-		return;
-	}
+	close_websocket();
 
-	if (shutdown_enabled) {
-		send(reply_to + "::" + ws_id + "::0::::Shutdown");
+    if (shutdown_enabled) {
 		log("LOG", "Shutdown!");
-		close_websocket();
+		send(reply_to + "::" + ws_id + "::0::::Shutdown requested");
 
-		#if defined(__FreeBSD__)
-			sync();
-			reboot(RB_POWEROFF);
-		#else
-			system("poweroff");
-		#endif
+        #if defined(__FreeBSD__)
+        sync();
+        reboot(RB_POWEROFF);
+        #else
+        system("poweroff");
+        #endif
 
 	} else {
-		send(reply_to + "::" + ws_id + "::0::::Shutdown disabled, shutting down client only");
-		log("LOG", "Shutdown disabled, exiting client!");
+		send(reply_to + "::" + ws_id + "::0::::Shutdown requested but not possible. Exiting wsclient");
+        log("LOG", "Shutdown disabled, exiting client!");
 		close_websocket();
+		std::raise(SIGTERM);
 		std::exit(0);
 	}
-
+	
 	return;
   }
 }

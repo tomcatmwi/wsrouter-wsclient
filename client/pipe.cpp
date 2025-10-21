@@ -66,7 +66,6 @@ void watch_pipe() {
         }
 
         else {
-
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
@@ -81,21 +80,26 @@ void watch_pipe() {
 
 }
 
-//  Writes the incoming pipe: messages received from outside, meant for external programs
-
+//  Writes the incoming messages received from outside, meant for external programs
 void write_pipe(const std::string& message) {
 			
     int fd = open(pipe_in.c_str(), O_WRONLY | O_NONBLOCK);
+    int err = errno;
 
     if (fd == -1) {
-        log("ERROR", "Cannot open incoming pipe for writing: " + std::string(strerror(errno)));
+
+        //  Silently fail if nothing is reading the pipe
+        if (err == ENXIO)
+            return;
+
+        log("ERROR", "Cannot open input pipe " + pipe_in + " for writing: " + std::string(strerror(err)));
         return;
     }
     
 	ssize_t bytes_written = write(fd, (message + "\n").c_str(), message.size() + 1);
 
     if (bytes_written == -1) {
-        log("ERROR", "Failed to write to pipe_in: " + std::string(strerror(errno)));
+        log("ERROR", "Failed to write to pipe_in: " + std::string(strerror(err)));
     }
 
     close(fd);
