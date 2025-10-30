@@ -75,5 +75,5 @@ $COMPILER \
     &&
 
 echo "Stripping binary..." &&
-strip "$APP_NAME" &&
+strip ./bin/"$APP_NAME" &&
 echo Completed successfully!

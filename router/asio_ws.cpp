@@ -19,7 +19,7 @@
 websocketpp::connection_hdl hdl;
 websocketpp::server<websocketpp::config::asio> wsrouter;
 static websocketpp::lib::error_code ec;
-asio::io_service io;
+asio::io_context io;
 
 //  Flag to indicate that the program is quitting
 static std::atomic<bool> quitting{false};

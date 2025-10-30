@@ -36,7 +36,7 @@ void watch_pipe() {
     
     //  Pipe (re)opener
     auto open_pipe =[&]() -> bool {
-	fd = open(pipe_out.c_str(), O_RDONLY | O_NONBLOCK);
+	fd = open(pipe_out.c_str(), O_RDONLY);
         
         if (fd == -1) {
                 log("ERROR", "Error opening FIFO pipeline: " + std::string(strerror(errno)));
@@ -64,8 +64,11 @@ void watch_pipe() {
                 send(incoming);
             }
         }
+        else if (bytes_read == 0)
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
         else {
+
             if (errno == EAGAIN || errno == EWOULDBLOCK) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
                 continue;
